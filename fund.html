@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<!--
+Gen LockTime
+Copyright (C) 2017  Antoine FERRON
+
+Fund a locktime Bitcoin account
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+ -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+  <script src="js/bitcore-lib.js"></script>
+  <script src="js/jquery-3.2.1.min.js"></script>
+  <script src="js/jquery-ui.min.js"></script>
+  <script src="js/qrcode.min.js"></script>
+  <script src="js/fund.js"></script>
+</head>
+<body>
+  <h1>Fund an account with a locktime</h1>
+  <p id="newadrp">Generate a new dedicated address?<input type="checkbox" id="newadr"></p>
+  <p id="addrfield">Public Address : <input type="text" id="userpubadr"></p>
+  <p>Locked until : <input type="text" id="datepicker"></p>
+  <p>Pick a locking date hereover</p>
+  <p>Lock the fund you send to the address</p>
+  <div id="qrcode"></div>
+  <p>Fund will be locked by knowing :<br>- Private key of the public address provided,
+  or private key shown at the end in case you asked for a new dedicated address.<br>
+  - the locking date (LockTime unix time number)</p>
+  <p><button type="button" id="gobut">Start</button></p>
+  <p id="disp"></p>
+  <p id="back"></p>
+ </body>
+</html>
