@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
-Spend CLTV
+CheckLockTimeVerify spending
 Copyright (C) 2017  Antoine FERRON
 
-Spend a time locked Bitcoin account
+Spend a locktime Bitcoin account. Gets an UTXO and provides the scriptSig to move the fund.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
   <link rel="stylesheet" type="text/css" href="css/style.css">
   <script src="js/bitcore-lib.js"></script>
   <script src="js/jquery-3.2.1.min.js"></script>
-  <script src="js/qrcode.min.js"></script>
   <script src="js/spend.js"></script>
 </head>
 <body>
@@ -32,5 +31,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
   <p><button type="button" id="gobut">Move it!</button></p>
   <p id="disp"></p>
   <p id="tx"></p>
- </body>
+</body>
 </html>

@@ -1,8 +1,8 @@
-// Spend LockTime
+// CheckLockTimeVerify spending
 // Copyright (C) 2017  Antoine FERRON
-
-// Spend a locktime account
-
+//
+// Spend a locktime Bitcoin account. Gets an UTXO and provides the scriptSig to move the fund.
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, version 3 of the License.
@@ -16,11 +16,11 @@
 $.support.cors = true;
 function checkadr(account){
 	console.log("Wait for payment");
-	p2shAddress = bitcore.Address.payingTo(
-	bitcore.Script.empty()
-   .add(bitcore.crypto.BN.fromNumber(Number($('#datelock').val())).toScriptNumBuffer())
-   .add('OP_CHECKLOCKTIMEVERIFY').add('OP_DROP')
-   .add(bitcore.Script.buildPublicKeyHashOut(account.privateKey.toAddress(bitcore.Networks.livenet))) , bitcore.Networks.livenet);
+	var p2shAddress = bitcore.Address.payingTo(
+		bitcore.Script.empty()
+			.add(bitcore.crypto.BN.fromNumber(Number($('#datelock').val())).toScriptNumBuffer())
+			.add('OP_CHECKLOCKTIMEVERIFY').add('OP_DROP')
+			.add(bitcore.Script.buildPublicKeyHashOut(account.privateKey.toAddress(bitcore.Networks.livenet))) , bitcore.Networks.livenet);
 	document.getElementById("disp").innerHTML = 'Checking address';
 	window.scrollTo(0,document.body.scrollHeight);
 	$.ajax({
@@ -50,41 +50,39 @@ function checkadr(account){
 	});
 }
 function getfeeperkb(){
-$.getJSON( "https://api.blockcypher.com/v1/btc/main", function( json ) {
-  feeperkbnow = json.medium_fee_per_kb;
- });
+	$.getJSON( "https://api.blockcypher.com/v1/btc/main", function( json ){
+		feeperkbnow = json.medium_fee_per_kb
+	});
 }
 function GetUtxo(txid,account, p2shAddress){
 	console.log("Getting utxo");
 	$.ajax({
-	//url: "https://blockexplorer.com/api/tx/"+txid,
-	url: "https://api.blockcypher.com/v1/btc/main/txs/"+txid,
-	type: "GET",
-	cache: false,
-	dataType: "json",
-	success: function (msg) {
-		var validaddr = false;
-		//for (var outidx in msg.vout){
-			//if (msg.vout[outidx].scriptPubKey.addresses[0]==account.address){
-		for (var outidx in msg.outputs){
-			if (msg.outputs[outidx].addresses[0] == p2shAddress){
-				console.log(JSON.stringify(msg.outputs[outidx]));
-				validaddr = true;
-				document.getElementById("disp").innerHTML = "Data OK, processing ...";
-				var addrdest = $('#toadr').val();
-				//var changeadr = msg.inputs[0].addresses[0]; //msg.vin[0].addr;
-				signtransaction(account, msg.outputs[outidx], txid, parseInt(outidx,10) , addrdest, p2shAddress);
+		//url: "https://blockexplorer.com/api/tx/"+txid,
+		url: "https://api.blockcypher.com/v1/btc/main/txs/"+txid,
+		type: "GET",
+		cache: false,
+		dataType: "json",
+		success: function (msg) {
+			var validaddr = false;
+			//for (var outidx in msg.vout){
+				//if (msg.vout[outidx].scriptPubKey.addresses[0]==account.address){
+			for (var outidx in msg.outputs){
+				if (msg.outputs[outidx].addresses[0] == p2shAddress){
+					console.log(JSON.stringify(msg.outputs[outidx]));
+					validaddr = true;
+					document.getElementById("disp").innerHTML = "Data OK, processing ...";
+					var addrdest = $('#toadr').val();
+					processtx(account, msg.outputs[outidx], txid, parseInt(outidx,10) , addrdest, p2shAddress);
+				}
 			}
+			if (!validaddr){
+				setTimeout(checkadr, 60000, account);
+			}
+		},
+		error: function () {
+			document.getElementById("disp").innerHTML = "Error";
 		}
-		if (!validaddr){
-			setTimeout(checkadr, 60000, account);
-		}
-
-	},
-	error: function () {
-		document.getElementById("disp").innerHTML = "Error";
-	}
-});
+	});
 }
 
 var bitcore = require('bitcore-lib');
@@ -93,46 +91,30 @@ function createaddr(pvkey){
 	var privateKey = new bitcore.PrivateKey(pvkey,bitcore.Networks.livenet);
 	var address = privateKey.toAddress(bitcore.Networks.livenet);
 	window.scrollTo(0,document.body.scrollHeight);
-	setTimeout(checkadr, 250, {'privateKey':privateKey,'address':address} );
+	setTimeout(checkadr, 250, {'privateKey':privateKey,'address':address} )
 }
-const getSpendTransaction = function(txid, outid, account, destaddr, amount) {
-  redeemScript = bitcore.Script.empty()
-   .add(bitcore.crypto.BN.fromNumber(Number($('#datelock').val())).toScriptNumBuffer())
-   .add('OP_CHECKLOCKTIMEVERIFY').add('OP_DROP')
-   .add(bitcore.Script.buildPublicKeyHashOut(account.address, bitcore.Networks.livenet));
-  const result = new bitcore.Transaction().from({
-    "txid": txid,
-    "vout": outid,
-    "scriptPubKey": redeemScript.toScriptHashOut(),
-    "satoshis": amount,
-  })
-  .to(destaddr, amount - Math.floor(feeperkbnow*0.25))
-  // CLTV requires the transaction nLockTime to be >= the stack argument in the redeem script
-  .lockUntilDate(Number($('#datelock').val()), 0, );
-  // the CLTV opcode requires that the input's sequence number not be finalized
-  result.inputs[0].sequenceNumber = 0;
-  const signature = bitcore.Transaction.sighash.sign(
-    result,
-    account.privateKey,
-    bitcore.crypto.Signature.SIGHASH_ALL,
-    0,
-    redeemScript
-  );
 
-  // setup the scriptSig of the spending transaction to spend the p2sh-cltv-p2pkh redeem script
-  result.inputs[0].setScript(
-    bitcore.Script.empty()
-    .add(signature.toTxFormat())
-    .add(account.privateKey.toPublicKey().toBuffer())
-    .add(redeemScript.toBuffer())
-  );
-  console.log(result.inputs[0].script.toString());
-  return result;
-};
-
-function signtransaction(account, utxo_input, txid, outid, destaddr, p2shAddress){
+function processtx(account, utxo_input, txid, outid, destaddr, p2shAddress){
 	console.log("Transaction generation and signing");
-	var transaction = getSpendTransaction(txid, outid, account, destaddr, utxo_input.value)
+	var redeemScript = bitcore.Script.empty()
+		.add(bitcore.crypto.BN.fromNumber(Number($('#datelock').val())).toScriptNumBuffer())
+		.add('OP_CHECKLOCKTIMEVERIFY').add('OP_DROP')
+		.add(bitcore.Script.buildPublicKeyHashOut(account.address, bitcore.Networks.livenet) );
+	var transaction = new bitcore.Transaction().from(
+	{	"txid": txid,
+		"vout": outid,
+		"scriptPubKey": redeemScript.toScriptHashOut(),
+		"satoshis": utxo_input.value }
+	)
+		.to(destaddr, utxo_input.value - Math.floor(feeperkbnow*0.25))
+		.lockUntilDate(Number($('#datelock').val()), 0 );
+	transaction.inputs[0].sequenceNumber = 0;
+	var signature = bitcore.Transaction.sighash.sign(transaction, account.privateKey, bitcore.crypto.Signature.SIGHASH_ALL, 0, redeemScript);
+	transaction.inputs[0].setScript(
+		bitcore.Script.empty()
+		.add(signature.toTxFormat())
+		.add(account.privateKey.toPublicKey().toBuffer())
+		.add(redeemScript.toBuffer()) );
 	document.getElementById("disp").innerHTML = "Transaction done";
 	var pushtx = { tx: transaction.toString() };
 	$.post('https://api.blockcypher.com/v1/btc/main/txs/push', JSON.stringify(pushtx))
@@ -155,7 +137,7 @@ function end(txid){
 	document.getElementById("tx").appendChild(backbtn);
 	backbtn.setAttribute("id", "backbutton");
 	window.scrollTo(0,document.body.scrollHeight);
-	$('#backbutton').click( function () { window.location.href='spend.html'; });;
+	$('#backbutton').click( function () { window.location.href='spend.html' })
 }
 
 function GoProcess()
@@ -170,17 +152,17 @@ function GoProcess()
 			throw "No Date";
 		}
 	catch(err){
-		document.getElementById("disp").innerHTML = "Error in provided key , destination addresse or unix time.";
+		document.getElementById("disp").innerHTML = "Error in provided key , destination address or unix time.";
 		document.getElementById("disp").style.color = "FireBrick";
 		throw "Private key, address or unix time verification failed";
 	}
 	$('#gobut').hide();
 	document.getElementById("disp").innerHTML = 'Please Wait ...';
-	setTimeout(createaddr, 250, pvkeyuser);
+	setTimeout(createaddr, 250, pvkeyuser)
 }
 
-$( document ).ready(function() { 
-	$('#gobut').click( function () {
-		GoProcess();
+$( document ).ready(function(){
+	$('#gobut').click( function (){
+		GoProcess()
 	});
 });

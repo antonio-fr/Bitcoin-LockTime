@@ -1,8 +1,8 @@
-// Gen LockTime
+// CheckLockTimeVerify Address generator
 // Copyright (C) 2017  Antoine FERRON
-
-// Fund a locktime account
-
+//
+// Fund a locktime Bitcoin account, an address from pay-to-script-hash
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, version 3 of the License.
@@ -13,8 +13,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-$.support.cors = true;
-
 var bitcore = require('bitcore-lib');
 
 function dispback(){
@@ -24,7 +22,7 @@ function dispback(){
 	document.getElementById("back").appendChild(backbtn);
 	backbtn.setAttribute("id", "backbutton");
 	window.scrollTo(0,document.body.scrollHeight);
-	$('#backbutton').click( function () { window.location.href='fund.html'; });;
+	$('#backbutton').click( function () { window.location.href='fund.html' })
 }
 function genaddr(){
 	var qrcode = new QRCode("qrcode", {width: 160,height: 160, correctLevel : QRCode.CorrectLevel.M});
@@ -36,7 +34,7 @@ function genaddr(){
 	}
 	else{
 		var pubadr = $('#userpubadr').val().toString();
-		var pvkeydisp = "the one related to the pub address filled in";
+		var pvkeydisp = "the one related to the public address filled in";
 	}
 	var p2shAddress = bitcore.Address.payingTo(
 	bitcore.Script.empty()
@@ -50,7 +48,7 @@ function genaddr(){
 	document.getElementById("disp").innerHTML += "<br>PV KEY : "+pvkeydisp;
 	document.getElementById("disp").innerHTML += "<br>LockTime : "+Math.floor( $("#datepicker").datepicker("getDate") / 1000 );
 	dispback();
-	window.scrollTo(0,document.body.scrollHeight);
+	window.scrollTo(0,document.body.scrollHeight)
 }
 function GoProcess(msg)
 {
@@ -69,7 +67,7 @@ function GoProcess(msg)
 		throw "Address and Date verification failed";
 	}
 	document.getElementById("disp").innerHTML = 'Please Wait';
-	setTimeout(genaddr, 250);
+	setTimeout(genaddr, 250)
 }
 $( document ).ready(function() { 
 	$('#qrcode').hide();

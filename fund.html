@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
-Gen LockTime
+CheckLockTimeVerify Address generator
 Copyright (C) 2017  Antoine FERRON
 
-Fund a locktime Bitcoin account
+Fund a locktime Bitcoin account, an address from pay-to-script-hash
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -33,11 +33,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
   <p>Pick a locking date hereover</p>
   <p>Lock the fund you send to the address</p>
   <div id="qrcode"></div>
-  <p>Fund will be locked by knowing :<br>- Private key of the public address provided,
+  <p>Fund in this address will be locked by knowing :<br>- Private key of the public address provided,
   or private key shown at the end in case you asked for a new dedicated address.<br>
   - the locking date (LockTime unix time number)</p>
   <p><button type="button" id="gobut">Start</button></p>
   <p id="disp"></p>
   <p id="back"></p>
- </body>
+</body>
 </html>
