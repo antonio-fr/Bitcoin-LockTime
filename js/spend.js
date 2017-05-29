@@ -20,22 +20,19 @@ function checkadr(account){
 		bitcore.Script.empty()
 			.add(bitcore.crypto.BN.fromNumber(Number($('#datelock').val())).toScriptNumBuffer())
 			.add('OP_CHECKLOCKTIMEVERIFY').add('OP_DROP')
-			.add(bitcore.Script.buildPublicKeyHashOut(account.privateKey.toAddress(bitcore.Networks.livenet))) , bitcore.Networks.livenet);
+			.add(bitcore.Script.buildPublicKeyHashOut(account.privateKey.toAddress(bnetwork))) , bnetwork);
 	document.getElementById("disp").innerHTML = 'Checking address';
 	window.scrollTo(0,document.body.scrollHeight);
 	$.ajax({
-		//url: "https://blockexplorer.com/api/addr/"+p2shAddress.toString(),
-		url: "https://api.blockcypher.com/v1/btc/main/addrs/"+p2shAddress.toString(),
+		url: apiurl+"addrs/"+p2shAddress.toString(),
 		type: "GET",
 		cache: false,
 		dataType: "json",
 		success: function (msg) {
-			//if (msg.unconfirmedTxApperances + msg.txApperances > 0 ){
 			if ( msg.unconfirmed_n_tx + msg.final_n_tx > 0 ){
 			console.log("payment received");
 				document.getElementById("disp").innerHTML = "OK, retrieving details ...";
 				getfeeperkb();
-				//setTimeout(GetUtxo, 60000, msg.transactions[msg.transactions.length - 1],account);
 				if (msg.unconfirmed_n_tx>0)
 					setTimeout(GetUtxo, 2000, msg.unconfirmed_txrefs[msg.unconfirmed_txrefs.length - 1].tx_hash,account, p2shAddress);
 				else
@@ -50,22 +47,19 @@ function checkadr(account){
 	});
 }
 function getfeeperkb(){
-	$.getJSON( "https://api.blockcypher.com/v1/btc/main", function( json ){
+	$.getJSON( apiurl.slice(0,-1), function( json ){
 		feeperkbnow = json.medium_fee_per_kb
 	});
 }
 function GetUtxo(txid,account, p2shAddress){
 	console.log("Getting utxo");
 	$.ajax({
-		//url: "https://blockexplorer.com/api/tx/"+txid,
-		url: "https://api.blockcypher.com/v1/btc/main/txs/"+txid,
+		url: apiurl+"txs/"+txid,
 		type: "GET",
 		cache: false,
 		dataType: "json",
 		success: function (msg) {
 			var validaddr = false;
-			//for (var outidx in msg.vout){
-				//if (msg.vout[outidx].scriptPubKey.addresses[0]==account.address){
 			for (var outidx in msg.outputs){
 				if (msg.outputs[outidx].addresses[0] == p2shAddress){
 					console.log(JSON.stringify(msg.outputs[outidx]));
@@ -88,8 +82,8 @@ function GetUtxo(txid,account, p2shAddress){
 var bitcore = require('bitcore-lib');
 
 function createaddr(pvkey){
-	var privateKey = new bitcore.PrivateKey(pvkey,bitcore.Networks.livenet);
-	var address = privateKey.toAddress(bitcore.Networks.livenet);
+	var privateKey = new bitcore.PrivateKey(pvkey,bnetwork);
+	var address = privateKey.toAddress(bnetwork);
 	window.scrollTo(0,document.body.scrollHeight);
 	setTimeout(checkadr, 250, {'privateKey':privateKey,'address':address} )
 }
@@ -99,7 +93,7 @@ function processtx(account, utxo_input, txid, outid, destaddr, p2shAddress){
 	var redeemScript = bitcore.Script.empty()
 		.add(bitcore.crypto.BN.fromNumber(Number($('#datelock').val())).toScriptNumBuffer())
 		.add('OP_CHECKLOCKTIMEVERIFY').add('OP_DROP')
-		.add(bitcore.Script.buildPublicKeyHashOut(account.address, bitcore.Networks.livenet) );
+		.add(bitcore.Script.buildPublicKeyHashOut(account.address, bnetwork) );
 	var transaction = new bitcore.Transaction().from(
 	{	"txid": txid,
 		"vout": outid,
@@ -117,7 +111,7 @@ function processtx(account, utxo_input, txid, outid, destaddr, p2shAddress){
 		.add(redeemScript.toBuffer()) );
 	document.getElementById("disp").innerHTML = "Transaction done";
 	var pushtx = { tx: transaction.toString() };
-	$.post('https://api.blockcypher.com/v1/btc/main/txs/push', JSON.stringify(pushtx))
+	$.post(apiurl+'txs/push', JSON.stringify(pushtx))
 		.done(function(srvrep){
 			end(srvrep.tx.hash);
 		})
@@ -129,7 +123,7 @@ function processtx(account, utxo_input, txid, outid, destaddr, p2shAddress){
 function end(txid){
 	if (txid.length>0){
 		document.getElementById("disp").innerHTML = "Transaction Sent (won't be enforced by the network before locktime)";
-		document.getElementById("tx").innerHTML = 'Tx ID : <a target="_blank" href="https://www.blocktrail.com/BTC/tx/'+txid+'">'+txid+'</a>';
+		document.getElementById("tx").innerHTML = 'Tx ID : <a target="_blank" href="'+blockurl+'tx/'+txid+'">'+txid+'</a>';
 	}
 	var backbtn = document.createElement("BUTTON");
 	var txtbut = document.createTextNode("Restart");
@@ -142,6 +136,17 @@ function end(txid){
 
 function GoProcess()
 { 
+	testnet = $('#testsel')[0].checked;
+	if (testnet){
+		bnetwork = bitcore.Networks.testnet;
+		blockurl = "https://www.blocktrail.com/tBTC/";
+		apiurl = "https://api.blockcypher.com/v1/btc/test3/";
+	}
+	else{
+		bnetwork = bitcore.Networks.livenet;
+		blockurl = "https://www.blocktrail.com/BTC/";
+		apiurl = "https://api.blockcypher.com/v1/btc/main/";
+	}
 	var pvkeyuser = $('#pvkey').val();
 	try { 
 		 bitcore.PrivateKey.fromWIF(pvkeyuser);

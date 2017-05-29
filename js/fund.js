@@ -28,8 +28,8 @@ function genaddr(){
 	var qrcode = new QRCode("qrcode", {width: 160,height: 160, correctLevel : QRCode.CorrectLevel.M});
 	window.scrollTo(0,document.body.scrollHeight);
 	if ($('#newadr')[0].checked){
-		var privateKey = new bitcore.PrivateKey(null);
-		var pubadr = privateKey.toAddress();
+		var privateKey = new bitcore.PrivateKey(null,bnetwork);
+		var pubadr = privateKey.toAddress(bnetwork);
 		var pvkeydisp = privateKey.toWIF();
 	}
 	else{
@@ -40,11 +40,11 @@ function genaddr(){
 	bitcore.Script.empty()
 		.add(bitcore.crypto.BN.fromNumber( Math.floor( $("#datepicker").datepicker("getDate") / 1000 ) ).toScriptNumBuffer())
 		.add('OP_CHECKLOCKTIMEVERIFY').add('OP_DROP')
-		.add(bitcore.Script.buildPublicKeyHashOut( pubadr )) );
+		.add(bitcore.Script.buildPublicKeyHashOut( pubadr )) , bnetwork);
 	$('#qrcode').show();
 	qrcode.makeCode("bitcoin:"+p2shAddress);
 	document.getElementById("disp").innerHTML = 'Locked Time address <a href="bitcoin:'+p2shAddress+'">'+p2shAddress+'</a>';
-	document.getElementById("back").innerHTML = 'Check Address <a target="_blank" href="https://www.blocktrail.com/BTC/address/'+p2shAddress+'">on Block explorer</a>';
+	document.getElementById("back").innerHTML = 'Check Address <a target="_blank" href="'+blockurl+p2shAddress+'">on Block explorer</a>';
 	document.getElementById("disp").innerHTML += "<br>PV KEY : "+pvkeydisp;
 	document.getElementById("disp").innerHTML += "<br>LockTime : "+Math.floor( $("#datepicker").datepicker("getDate") / 1000 );
 	dispback();
@@ -53,6 +53,15 @@ function genaddr(){
 function GoProcess(msg)
 {
 	$('#gobut').hide();
+	testnet = $('#testsel')[0].checked;
+	if (testnet){
+		bnetwork = bitcore.Networks.testnet;
+		blockurl = "https://www.blocktrail.com/tBTC/address/";
+	}
+	else{
+		bnetwork = bitcore.Networks.livenet;
+		blockurl = "https://www.blocktrail.com/BTC/address/";
+	}
 	try { 
 		 if (!$('#newadr')[0].checked)
 			bitcore.Address.fromString($('#userpubadr').val().toString());
